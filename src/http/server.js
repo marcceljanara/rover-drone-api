@@ -9,6 +9,7 @@ import adminsPlugin from '../api/admins/index.js';
 import rentalsPlugin from '../api/rentals/index.js';
 import devicesPlugin from '../api/devices/index.js';
 import paymentsPlugin from '../api/payments/index.js';
+import reportsPlugin from '../api/reports/index.js';
 
 // service
 import UserService from '../services/postgres/UserServices.js';
@@ -18,6 +19,8 @@ import RentalsService from '../services/postgres/RentalsService.js';
 import DevicesService from '../services/postgres/DevicesService.js';
 import PaymentsService from '../services/postgres/PaymentsService.js';
 import ProducerService from '../services/rabbitmq/ProducerService.js';
+import PublisherService from '../services/mqtt/PublisherServiceMqtt.js';
+import ReportsService from '../services/postgres/ReportsService.js';
 
 // validator
 import UsersValidator from '../validator/users/index.js';
@@ -26,9 +29,7 @@ import AdminsValidator from '../validator/admins/index.js';
 import RentalsValidator from '../validator/rentals/index.js';
 import DevicesValidator from '../validator/devices/index.js';
 import PaymentsValidator from '../validator/payments/index.js';
-
-// // utils
-// import EmailManager from '../utils/EmailManager.js';
+import ReportsValidator from '../validator/reports/index.js';
 
 // token manager
 import TokenManager from '../tokenize/TokenManager.js';
@@ -36,7 +37,6 @@ import TokenManager from '../tokenize/TokenManager.js';
 // Exceptions
 import ClientError from '../exceptions/ClientError.js';
 import ServerError from '../exceptions/ServerError.js';
-import PublisherService from '../services/mqtt/PublisherServiceMqtt.js';
 
 dotenv.config();
 
@@ -51,6 +51,7 @@ function createServer() {
   const rentalsService = new RentalsService();
   const devicesService = new DevicesService();
   const paymentsService = new PaymentsService();
+  const reportsService = new ReportsService();
 
   usersPlugin({
     app,
@@ -93,6 +94,12 @@ function createServer() {
     rentalsService,
     rabbitmqService: ProducerService,
     validator: PaymentsValidator,
+  });
+
+  reportsPlugin({
+    app,
+    reportsService,
+    validator: ReportsValidator,
   });
 
   // Global Error Handling Middleware

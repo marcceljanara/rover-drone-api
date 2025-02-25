@@ -17,11 +17,11 @@ exports.up = (pgm) => {
       onDelete: 'CASCADE', // Jika user dihapus, rental terkait ikut dihapus
     },
     start_date: {
-      type: 'DATE',
+      type: 'TIMESTAMP',
       notNull: true,
     },
     end_date: {
-      type: 'DATE',
+      type: 'TIMESTAMP',
       notNull: true,
     },
     rental_status: {

@@ -127,7 +127,8 @@ class DevicesService {
     let query = {
       text: `
         SELECT 
-          devices.*, 
+          devices.*,
+          devices.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS created_at, 
           TO_CHAR(
             make_interval(secs => devices.last_active), 
             'DD "Hari" HH24:MI:SS'
@@ -147,7 +148,8 @@ class DevicesService {
       query = {
         text: `
           SELECT 
-            *, 
+            *,
+            devices.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS created_at, 
             TO_CHAR(
               make_interval(secs => last_active), 
               'DD "Hari" HH24:MI:SS'

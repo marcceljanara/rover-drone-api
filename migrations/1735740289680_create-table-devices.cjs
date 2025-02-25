@@ -22,7 +22,7 @@ exports.up = (pgm) => {
       notNull: true,
     },
     last_reported_issue: {
-      type: 'DATE',
+      type: 'TIMESTAMP',
       default: null, // Tidak wajib diisi
     },
     last_active: {

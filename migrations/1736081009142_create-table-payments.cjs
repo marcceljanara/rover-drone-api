@@ -17,7 +17,7 @@ exports.up = (pgm) => {
       onDelete: 'CASCADE', // Jika rental dihapus, pembayaran terkait ikut dihapus
     },
     amount: {
-      type: 'INTEGER',
+      type: 'DECIMAL(15, 2)',
       notNull: true,
     },
     payment_date: {
