@@ -72,7 +72,7 @@ describe('/devices endpoint', () => {
 
       // Action
       const response = await request(server)
-        .delete(`/devices/${deviceId}`)
+        .put(`/devices/${deviceId}`)
         .set('Authorization', `Bearer ${accessTokenAdmin}`);
 
       // Assert
@@ -84,7 +84,7 @@ describe('/devices endpoint', () => {
     it('should response with 404 if device not found', async () => {
       // Arrange and Action
       const response = await request(server)
-        .delete('/devices/notfound')
+        .put('/devices/notfound')
         .set('Authorization', `Bearer ${accessTokenAdmin}`);
 
       // Assert
