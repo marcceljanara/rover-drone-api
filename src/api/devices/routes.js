@@ -7,7 +7,7 @@ const deviceRoutes = (handler) => {
 
   // Admin
   router.post('/devices', verifyToken, verifyAdmin, handler.postAddDeviceHandler);
-  router.delete('/devices/:id', verifyToken, verifyAdmin, handler.deleteDeviceHandler);
+  router.put('/devices/:id', verifyToken, verifyAdmin, handler.deleteDeviceHandler);
   router.put('/devices/:id/status', verifyToken, verifyAdmin, handler.putStatusDeviceHandler);
   router.put('/devices/:id/mqttsensor', verifyToken, verifyAdmin, handler.putMqttSensorHandler);
   router.put('/devices/:id/mqttcontrol', verifyToken, verifyAdmin, handler.putMqttControlHandler);

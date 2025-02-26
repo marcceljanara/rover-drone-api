@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import NotFoundError from '../../exceptions/NotFoundError.js';
 import AuthorizationError from '../../exceptions/AuthorizationError.js';
 import InvariantError from '../../exceptions/InvariantError.js';
+import calculateRentalCost from '../../utils/calculatorUtils.js';
 
 const { Pool } = pkg;
 
@@ -107,48 +108,27 @@ class RentalsService {
     }
   }
 
-  async addRental({ userId, startDate, endDate }, role) {
+  async addRental(userId, interval, role) {
     const client = await this._pool.connect(); // Dapatkan client dari pool untuk transaksi
     try {
       const id = `rental-${nanoid(6)}`;
-      const dailyRate = 100000;
 
-      // Validasi tanggal
-      const start_date = new Date(startDate);
-      const end_date = new Date(endDate);
-      const today = new Date();
-
-      // Pastikan start_date dan end_date tidak kurang dari hari ini (hari ini masih valid)
-      if (start_date < today || end_date < today) {
-        throw new InvariantError('Tanggal mulai dan tanggal akhir tidak boleh kurang dari hari ini');
-      }
-
-      // Validasi bahwa start_date maksimal 3 hari setelah hari ini
-      const maxStartDate = new Date(today);
-      maxStartDate.setDate(today.getDate() + 3); // +3 hari
-
-      if (start_date > maxStartDate) {
-        throw new InvariantError('Tanggal mulai tidak boleh lebih dari 3 hari setelah hari ini');
-      }
-
-      if (end_date < start_date) {
-        throw new InvariantError('tanggal akhir harus lebih besar atau sama dengan tanggal mulai');
-      }
+      // Tentukan start_date dan end_date berdasarkan interval (bulan)
+      const start_date = new Date(); // Waktu saat ini
+      const end_date = new Date(start_date);
+      end_date.setMonth(start_date.getMonth() + interval); // Tambah interval bulan
 
       // Validasi role
       if (role === 'admin') {
-        throw new AuthorizationError('admin tidak bisa melakukan aksi mengajukan rental');
+        throw new AuthorizationError('Admin tidak bisa melakukan aksi mengajukan rental');
       }
 
-      // Hitung durasi rental dalam hari
-      const rentalDays = Math.ceil((end_date - start_date) / (1000 * 60 * 60 * 24)) + 1;
-
-      // Hitung total biaya
-      const cost = rentalDays * dailyRate;
+      // Hitung durasi biaya rental
+      const cost = calculateRentalCost(interval).finalCost;
 
       await client.query('BEGIN'); // Mulai transaksi
 
-      // Cek apakah ada perangkat yang tersedia (rental_id IS NULL atau reserved_until sudah habis)
+      // Cek apakah ada perangkat yang tersedia
       const availableDeviceQuery = {
         text: `
           SELECT id FROM devices
@@ -168,18 +148,18 @@ class RentalsService {
 
       // Reservasi perangkat dengan TTL 30 detik
       const reserveDeviceQuery = {
-        text: `
-          UPDATE devices
-          SET reserved_until = NOW() + INTERVAL '30 seconds'
-          WHERE id = $1
-        `,
+        text: 'UPDATE devices SET reserved_until = NOW() + INTERVAL \'30 seconds\' WHERE id = $1',
         values: [deviceId],
       };
       await client.query(reserveDeviceQuery);
 
       // Tambahkan rental
       const rentalQuery = {
-        text: 'INSERT INTO rentals (id, user_id, start_date, end_date, cost, reserved_until) VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL \'30 seconds\') RETURNING id, cost',
+        text: `
+          INSERT INTO rentals (id, user_id, start_date, end_date, cost, reserved_until) 
+          VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '30 seconds') 
+          RETURNING id, cost
+        `,
         values: [id, userId, start_date, end_date, cost],
       };
       const rentalResult = await client.query(rentalQuery);
@@ -192,7 +172,7 @@ class RentalsService {
       };
       await client.query(paymentQuery);
 
-      await client.query('COMMIT'); // Commit transaksi jika semuanya sukses
+      await client.query('COMMIT'); // Commit transaksi jika sukses
       rentalResult.rows[0].payment_id = paymentId;
       return rentalResult.rows[0];
     } catch (error) {
@@ -207,8 +187,8 @@ class RentalsService {
     if (role === 'admin') {
       const query = {
         text: `SELECT id, 
-        start_date, 
-        end_date, 
+        start_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS start_date,
+        end_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS end_date, 
         rental_status, 
         cost FROM rentals WHERE is_deleted = FALSE`,
         values: [],
@@ -218,8 +198,8 @@ class RentalsService {
     }
     const query = {
       text: `SELECT id, 
-      start_date, 
-      end_date, 
+      start_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS start_date,
+      end_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS end_date, 
       rental_status, 
       cost FROM rentals WHERE user_id = $1 AND is_deleted = FALSE`,
       values: [userId],
@@ -231,7 +211,9 @@ class RentalsService {
   async getDetailRental(id, role, userId) {
     if (role === 'admin') {
       const query = {
-        text: `SELECT *, 
+        text: `SELECT *,
+        start_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS start_date,
+        end_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS end_date, 
         reserved_until AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS reserved_until,
         created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS created_at,
         updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS updated_at
@@ -246,6 +228,8 @@ class RentalsService {
     }
     const query = {
       text: `SELECT *,
+      start_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS start_date,
+      end_date AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS end_date,
       reserved_until AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS reserved_until,
       created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS created_at,
       updated_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Jakarta' AS updated_at

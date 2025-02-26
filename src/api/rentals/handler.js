@@ -50,15 +50,16 @@ class RentalsHandler {
       const { role } = req;
       const userId = req.id;
       await this._validator.validatePostAddRentalPayload(req.body);
-      const { startDate, endDate } = req.body;
-      const rental = await this._rentalsService.addRental({ userId, startDate, endDate }, role);
+      // Need Update based rental interval 6,12,24,36 month
+      const { interval } = req.body;
+      const rental = await this._rentalsService.addRental(userId, interval, role);
       const message = {
         userId,
         rentalId: rental.id,
         paymentId: rental.payment_id,
         cost: rental.cost,
-        startDate,
-        endDate,
+        startDate: rental.start_date,
+        endDate: rental.end_date,
       };
       await this._rabbitmqService.sendMessage('rental:request', JSON.stringify(message));
       await this._rabbitmqService.sendMessage('rental:payment', JSON.stringify(message));

@@ -8,9 +8,9 @@ const putStatusRentalPayloadSchema = Joi.object({
   rentalStatus: Joi.string().valid('active', 'completed', 'cancelled').required(),
 });
 
+// Need Update based rental interval 6,12,24,36 month
 const postAddRentalPayloadSchema = Joi.object({
-  startDate: Joi.date().iso().required(),
-  endDate: Joi.date().iso().required(),
+  interval: Joi.number().valid(6, 12, 24, 36).required(),
 });
 
 const putCancelRentalPayloadSchema = Joi.object({
