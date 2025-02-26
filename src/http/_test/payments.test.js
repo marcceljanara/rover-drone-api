@@ -44,31 +44,6 @@ const registerAndLoginUser = async (server) => {
   return accessToken;
 };
 
-const addRentalPayload = (() => {
-  const today = new Date();
-  const tommorow = new Date(today);
-  const threeDaysLater = new Date(today);
-
-  // Sent startDate menjadi besok
-  tommorow.setDate(today.getDate() + 1);
-
-  // Set endDate menjadi 3 hari setelah hari ini
-  threeDaysLater.setDate(today.getDate() + 3);
-
-  // Format tanggal menjadi YYYY-MM-DD
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  return {
-    startDate: formatDate(tommorow),
-    endDate: formatDate(threeDaysLater),
-  };
-});
-
 describe('/payments endpoint', () => {
   let server;
   let accessTokenAdmin;
@@ -102,7 +77,7 @@ describe('/payments endpoint', () => {
       await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
 
       // Action
       const response = await request(server)
@@ -123,7 +98,7 @@ describe('/payments endpoint', () => {
       const { paymentId } = (await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload())).body.data;
+        .send({ interval: 6 })).body.data;
 
       // Action
       const response = await request(server)
@@ -166,7 +141,7 @@ describe('/payments endpoint', () => {
       const { paymentId } = (await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload())).body.data;
+        .send({ interval: 6 })).body.data;
 
       // Action
       const response = await request(server)
@@ -209,7 +184,7 @@ describe('/payments endpoint', () => {
       const { paymentId } = (await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload())).body.data;
+        .send({ interval: 6 })).body.data;
 
       // Action
       const response = await request(server)

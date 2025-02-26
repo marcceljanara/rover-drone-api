@@ -43,31 +43,6 @@ const registerAndLoginUser = async (server) => {
   return accessToken;
 };
 
-const addRentalPayload = (() => {
-  const today = new Date();
-  const tommorow = new Date(today);
-  const threeDaysLater = new Date(today);
-
-  // Sent startDate menjadi besok
-  tommorow.setDate(today.getDate() + 1);
-
-  // Set endDate menjadi 3 hari setelah hari ini
-  threeDaysLater.setDate(today.getDate() + 3);
-
-  // Format tanggal menjadi YYYY-MM-DD
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  return {
-    startDate: formatDate(tommorow),
-    endDate: formatDate(threeDaysLater),
-  };
-});
-
 describe('/rentals endpoint', () => {
   let server;
   let accessTokenAdmin;
@@ -102,32 +77,13 @@ describe('/rentals endpoint', () => {
       const response = await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
 
       // Assert
       const responseJson = response.body;
       expect(response.statusCode).toBe(201);
       expect(responseJson.status).toBe('success');
       expect(responseJson.data.id).toBeDefined();
-    });
-    it('should return response 400 if startDate or endDate is before today', async () => {
-      // Arrange
-      await DevicesTableTestHelper.addDevice({ id: 'device-123' });
-
-      // Action
-      const response = await request(server)
-        .post('/rentals')
-        .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send({
-          startDate: '2025-01-26',
-          endDate: '2025-01-27',
-        });
-
-      // Assert
-      const responseJson = response.body;
-      expect(response.statusCode).toBe(400);
-      expect(responseJson.status).toBe('fail');
-      expect(responseJson.message).toBe('Tanggal mulai dan tanggal akhir tidak boleh kurang dari hari ini');
     });
     it('should return response 404 if device not available', async () => {
       // Arrange
@@ -137,7 +93,7 @@ describe('/rentals endpoint', () => {
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
         .send(
-          addRentalPayload(),
+          { interval: 6 },
         );
 
       // Assert
@@ -154,13 +110,13 @@ describe('/rentals endpoint', () => {
       const response = await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenAdmin}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
 
       // Assert
       const responseJson = response.body;
       expect(response.statusCode).toBe(403);
       expect(responseJson.status).toBe('fail');
-      expect(responseJson.message).toBe('admin tidak bisa melakukan aksi mengajukan rental');
+      expect(responseJson.message).toBe('Admin tidak bisa melakukan aksi mengajukan rental');
     });
   });
 
@@ -171,7 +127,7 @@ describe('/rentals endpoint', () => {
       const responseRental = await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
       const rentalId = responseRental.body.data.id;
 
       // Action
@@ -211,7 +167,7 @@ describe('/rentals endpoint', () => {
       const responseRental = await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
       const rentalId = responseRental.body.data.id;
 
       // Action
@@ -249,7 +205,7 @@ describe('/rentals endpoint', () => {
       await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
 
       // Action
       const response = await request(server)
@@ -271,7 +227,7 @@ describe('/rentals endpoint', () => {
       const responseRental = await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
       const rentalId = responseRental.body.data.id;
 
       // Action
@@ -311,7 +267,7 @@ describe('/rentals endpoint', () => {
       const responseRental = await request(server)
         .post('/rentals')
         .set('Authorization', `Bearer ${accessTokenUser}`)
-        .send(addRentalPayload());
+        .send({ interval: 6 });
       const rentalId = responseRental.body.data.id;
 
       // Action
